@@ -33,3 +33,16 @@ I'm still working on a proper deployment where it pulls the appropriate Slack we
 6) Click "Add Incoming Webhook"
 
 7) Configure options to: Post to "Notwork" (or wherever), set Name and Emoji to the same as in Step 4. Copy the 'Webhook URL' somewhere
+
+# TODO
+## Document functionality
+- [ ] Document Existing functions
+
+## Feature: Train types
+Add the ability to define a lunch train, meeting train, coffee train, beer train (you get the idea).
+
+## Feature: Change destination
+Ability to change destination once created
+
+## Feature: Change departure time
+Ability to change departure time once created
