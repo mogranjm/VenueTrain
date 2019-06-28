@@ -1,9 +1,9 @@
-LunchTrain V2
+VenueTrain
 ======================
 
-A Slack integration intended to help its users collaborate on places to get lunch
+A Slack integration intended to help its users collaborate on going to a place, at a time
 
-You can find an article I've written on ideology behind LunchTrain here -> http://clypd.com/staying-on-track-for-lunchtime/
+You can find an article written on ideology behind LunchTrain here -> http://clypd.com/staying-on-track-for-lunchtime/
 
 Usage (from within Slack, presumes set up with /train as the slash cmd):
 
@@ -14,9 +14,6 @@ Usage (from within Slack, presumes set up with /train as the slash cmd):
 <code> /train join <Destination> </code> Joins a train going to the specified destination
 
 <code> /train active </code> Reports a list of all the active trains and the time left on them
-
-Changelog from the HipChat version:
-- No more /train passengers (felt it was deprecated)
 
 Deployment setup notes:
 I'm still working on a proper deployment where it pulls the appropriate Slack webhook URL from an Environment URL, but for now this'll probably be fine
