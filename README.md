@@ -41,6 +41,9 @@ I'm still working on a proper deployment where it pulls the appropriate Slack we
 ## Feature: Train types
 Add the ability to define a lunch train, meeting train, coffee train, beer train (you get the idea).
 
+    Requires Upgrade: Multiple tickets
+    Allow users to board more than one train at a time
+
 ## Feature: Change destination
 Ability to change destination once created
 
