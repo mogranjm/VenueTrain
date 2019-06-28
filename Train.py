@@ -5,119 +5,295 @@ import json
 
 
 class Train(object):
-    def __init__(self, conductor, destination, departureTime):
-        self.TimeRemaining = departureTime
-        self.DisplayDestination = destination
-        self.MapDestination = destination.lower()
-        self.Passengers = set([conductor])
-        self.Lock = threading.Lock()
+    """ 
+    A class representing a Train object
 
-    def AddPassenger(self, passenger):
-        self.Lock.acquire()
-        if passenger in self.Passengers:
-            self.Lock.release()
-            return "%s is already on the train to %s" % (passenger, self.DisplayDestination)
-        self.Passengers.add(passenger)
-        self.Lock.release()
+    ...
+
+    Attributes
+    ----------
+    time_remaining: int
+        An integer representing the time of departure.
+    train_type: str
+        A description of the train destination (lunch, drinks, meeting, etc).
+    display_destination: str
+        Train destination (as submitted).
+    map_destination: str
+        Train destination (lowercase).
+    passengers: str
+        A set containing names of all users who have boarded the train.
+    lock: obj
+        A threading object to prevent simultaneous access to the train.
+
+    Methods
+    -------
+    add_passenger(passenger)
+        Adds a passenger to the train
+    passenger_string
+        Concatenates and announces names of all current train passengers
+    """
+
+    def __init__(self, conductor, train_type, destination, departure_time):
+        """
+        Parameters
+        ----------
+        time_remaining: int
+            An integer representing the time of departure.
+        train_type: str
+            A description of the train destination (lunch, drinks, meeting, etc).
+        display_destination: str
+            Train destination (as submitted).
+        map_destination: str
+            Train destination (lowercase).
+        passengers: str
+            A set containing names of all users who have boarded the train.
+        lock: obj
+            A threading object to prevent simultaneous access to the train.
+        """
+
+        self.time_remaining = departure_time
+        self.train_type = train_type
+        self.display_destination = destination
+        self.map_destination = destination.lower()
+        self.passengers = set([conductor])
+        self.lock = threading.Lock()
+
+    def add_passenger(self, passenger):
+        """Adds the user as a passenger to the Train
+        
+        The passenger name will be taken from the interacting user's username 
+        If the user is already aboard the train, the user will be notified
+        and no changes will be made to the Train.
+
+        Parameters
+        ----------
+        passenger: str
+            Name of passenger to board the train
+        """
+
+        self.lock.acquire()                 # Check the Train out for modification
+        if passenger in self.passengers:
+            self.lock.release()             # Check the Train back in to allow access by others
+            return "%s is already on the train to %s" % (passenger, self.display_destination)
+        self.passengers.add(passenger)      # Add the user to the set of passengers
+        self.lock.release()
         return None
 
-    def PassengerString(self):
-        self.Lock.acquire()
+    def passenger_string(self):
+        """Concatenates a string listing all passengers aboard the train"""        
+
+        self.lock.acquire()
         res = ""
-        numPassengers = len(self.Passengers)
+        passenger_count = len(self.passengers)
         i = 0
         for passenger in self.Passengers:
             res += passenger
-            if i != numPassengers - 1:
+            if i != passenger_count - 1:
                 res += ", "
-            if i == numPassengers - 2:
+            if i == passenger_count - 2:
                 res += "and "
             i += 1
-        self.Lock.release()
+        self.lock.release()
         return res
+    
+    def __str__(self):
+        return 'A train to %s at %s' % self.display_destination, self.departure_time
 
 
 class Station(object):
-    def __init__(self):
-        self.Lock = threading.Lock()
-        self.Trains = {}
+    """ 
+    A class representing a Station object
 
-    def AddTrain(self, train):
-        if train.MapDestination in self.Trains:
-            return "There's already a train to %s" % train.MapDestination
+    ...
+
+    Attributes
+    ---------
+    lock: obj
+        A threading object to prevent simultaneous access to the station.
+    trains: dict
+        A dictionary containing all train objects, identified by their map_destination
+
+    Methods
+    -------
+    add_train(train)
+        Adds a train to the station
+    delete_train(train)
+        Remove a train from the station
+    list_active_trains()
+        Lists all active trains
+    help()
+        Displays /train usage
+    join_train(passenger, destination)
+        Adds the user to the train going to the specified destination 
+    disembark_train(passenger, destination)
+        Removes user from specified train
+    """
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.trains = {}
+
+    def add_train(self, train):
+        """Adds a new train to the station's train dictionary.
+        
+        If there is already a train to the specified destination
+        The user will be notified and no new train will be added
+
+        Parameters
+        ----------
+        train: obj 
+           A train object 
+        """
+
+        if train.map_destination in self.trains: return "There's already a train to %s" % train.map_destination
         else:
-            self.Trains[train.MapDestination] = train
+            self.trains[train.map_destination] = train
             return None
 
-    def DeleteTrain(self, destination):
-        res = self.Trains.pop(destination, None)
+    def delete_train(self, destination):
+        """Removes a train from the station's train dictionary.
+        
+        If the selected destination does not exist in the train dictionary
+        The user will be notified and no change will be made
+
+        Parameters
+        ----------
+        destination: str
+            The train destination passed as the existing map_destination
+        """
+        res = self.trains.pop(destination, None)
         if res is None:
             return res
         return "The train to %s doesn't exist so it can't be removed" % destination
 
-    def ActiveTrainCommand(self):
-        self.Lock.acquire()
+    def list_active_trains(self):
+        """Lists all active trains"""
+
+        self.lock.acquire()
         res = "There are trains to: "
         i = 0
-        numTrains = len(self.Trains)
-        if numTrains == 0:
-            self.Lock.release()
+        train_count = len(self.trains)
+        if train_count == 0:
+            self.lock.release()
             return "There are currently no active trains"
-        for dest in self.Trains:
-            train = self.Trains[dest]
-            if numTrains == 1:
-                self.Lock.release()
-                return "There is currently a train to %s in %d mins (with %s on it)" % (train.DisplayDestination, train.TimeRemaining, train.PassengerString())
+        for dest in self.trains:
+            train = self.trains[dest]
+            if train_count == 1:
+                self.lock.release()
+                return "There is currently a train to %s in %d mins (with %s on it)" % (train.display_destination, train.time_remaining, train.passenger_string())
             else:
-                res += "%s in %d mins (with %s on it)" % (train.DisplayDestination, train.TimeRemaining, train.PassengerString())
-            if i != numTrains - 1:
+                res += "%s in %d mins (with %s on it)" % (train.display_destination, train.time_remaining, train.passenger_string())
+            if i != train_count - 1:
                 res += ", "
-            if i == numTrains - 2:
+            if i == train_count - 2:
                 res += "and "
             i += 1
-        self.Lock.release()
+        self.lock.release()
         return res
 
-    def HelpCommand(self):
-        return "Usage: /train start <destination> <minutes> || /train join <destination> || /train active"
+    def help(self):
+        # TODO: Incorporate train types 
+        """Lists standard usage for the /train command"""
 
-    def JoinTrainCommand(self, passenger, destination):
-        self.Lock.acquire()
+        return ":steam_locomotive: Need some help with `/train`?\n
+        To start a new train:\n
+        `/train start <destination> <departure_time>`\n\n
+
+        To join an existing train:\n
+        `/train join <destination>`\n\n
+
+        To list all active trains:\n
+        `/train active`\n\n"
+        
+        # TODO: Change destination
+        "To change an existing train's destination\n
+        `/train reroute <old_destination> <new_destination>`\n\n"
+
+        # TODO: Change departure time
+        "To change an existing train's departure time\n 
+        `/train reschedule <destination> <new_departure_time>`"
+
+    def join_train(self, passenger, destination):
+        """Add user to an existing train
+
+        If there is no train going to the specified destination
+        The user will be notified and no changes will be made.
+
+        Parameters
+        ----------
+        passenger: str
+            Username to be added to train's passenger set
+        destination: str
+            Train destination
+        """
+
+        self.lock.acquire()
         destination = destination.lower()
         res = ""
-        if destination in self.Trains:
-            oldTrain = self.GetPassengerTrain(passenger)
-            if oldTrain is not None and oldTrain.MapDestination != destination:
-                res = self.DitchTrain(passenger, destination)
-            train = self.Trains[destination]
-            err = train.AddPassenger(passenger)
-            self.Lock.release()
+        if destination in self.trains:
+            old_train = self.get_passenger_train(passenger)
+            if old_train is not None and old_train.map_destination != destination:
+                res = self.ditch_train(passenger, destination)
+            train = self.trains[destination]
+            err = train.add_passenger(passenger)
+            self.lock.release()
             if err is not None:
                 return err
             elif res == "":
-                res = "%s jumped on the train to %s" % (passenger, train.DisplayDestination)
+                res = "%s jumped on the train to %s" % (passenger, train.display_destination)
                 return res
             else:
                 return res
         else:
-            self.Lock.release()
+            self.lock.release()
             return "That train doesn't exist, please try again or find a new train to join"
 
-    def DitchTrain(self, passenger, destination):
-        oldTrain = self.GetPassengerTrain(passenger)
-        res = "%s ditched their train to %s in favor of one to %s." % (passenger, oldTrain.DisplayDestination, destination)
-        oldTrain.Lock.acquire()
-        oldTrain.Passengers.remove(passenger)
-        oldTrain.Lock.release()
-        if len(oldTrain.Passengers) == 0:
-            self.DeleteTrain(oldTrain.MapDestination)
+    def disembark_train(self, passenger, destination = None):
+        # TODO: Allow users to board >1 train at a time
+        """Remove a user from train passenger set
+
+        If no more users remain on the specified train
+        The train will be removed from the station
+
+        Parameters
+        ----------
+        passenger: str
+            User to be disembarked
+        destination: str (optional)
+            New train to be boarded
+        """
+
+        old_train = self.get_passenger_train(passenger)
+
+        res = "%s disembarked from their train to %s" % (passenger, old_train.display_destination)
+        if destination != None:
+            res += "in favour of one to %s" % destination
+
+        old_train.lock.acquire()
+        old_train.passengers.remove(passenger)
+        old_train.lock.release()
+
+        if len(old_train.passengers) == 0:
+            # TODO: Notify users that this train has been deleted
+            self.delete_train(old_train.map_destination)
+
         return res
 
-    def GetPassengerTrain(self, passenger):
-        for dest in self.Trains:
-            train = self.Trains[dest]
-            if passenger in train.Passengers:
+    def get_passenger_train(self, passenger):
+        # TODO: Allow users to board >1 train at a time
+        """Display the train the passenger has boarded
+
+        Parameters
+        ----------
+        passenger: str
+            User to be searched for among the trains
+        """
+
+        for dest in self.trains:
+            train = self.trains[dest]
+            if passenger in train.passengers:
                 return train
+        # TODO: Notify user if they are not on a train
         return None
 
     def StartTrainCommand(self, conductor, destination, time):
@@ -215,5 +391,5 @@ def Handler(station, user, message):
 
 def PostMessage(message):
     webhook_url = 'fake url'
-	slack_data = {'text': message, 'response_type': 'in_channel'}
-	response = requests.post(webhook_url, data=json.dumps(slack_data), headers={'Content-Type': 'application/json'})
+    slack_data = {'text': message, 'response_type': 'in_channel'}
+    response = requests.post(webhook_url, data=json.dumps(slack_data), headers={'Content-Type': 'application/json'})
